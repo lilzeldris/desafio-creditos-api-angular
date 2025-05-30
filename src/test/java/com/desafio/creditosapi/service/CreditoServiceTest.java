@@ -7,11 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
 
 import javax.persistence.EntityNotFoundException;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -27,13 +24,13 @@ class CreditoServiceTest {
     private CreditoRepository creditoRepository;
 
     @Mock
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private NotificacaoService notificacaoService; // Alterado aqui
 
     private CreditoService creditoService;
 
     @BeforeEach
     void setUp() {
-        creditoService = new CreditoService(creditoRepository, kafkaTemplate);
+        creditoService = new CreditoService(creditoRepository, notificacaoService); // Alterado aqui
     }
 
     @Test
@@ -46,7 +43,7 @@ class CreditoServiceTest {
 
         assertFalse(resultado.isEmpty());
         assertEquals("7891011", resultado.get(0).getNumeroNfse());
-        verify(kafkaTemplate).send(eq("consultas-credito"), any());
+        verify(notificacaoService).notificarConsulta(any()); // Alterado aqui
     }
 
     @Test
@@ -59,7 +56,7 @@ class CreditoServiceTest {
 
         assertNotNull(resultado);
         assertEquals("123456", resultado.getNumeroCredito());
-        verify(kafkaTemplate).send(eq("consultas-credito"), any());
+        verify(notificacaoService).notificarConsulta(any()); // Alterado aqui
     }
 
     @Test
@@ -70,4 +67,4 @@ class CreditoServiceTest {
             creditoService.buscarPorNumeroCredito("999999");
         });
     }
-} 
+}
