@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS credito
     valor_faturado   DECIMAL(15, 2)  NOT NULL,
     valor_deducao    DECIMAL(15, 2)  NOT NULL,
     base_calculo     DECIMAL(15, 2)  NOT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE (numero_credito, numero_nfse) 
 );
 
 INSERT INTO credito (numero_credito, numero_nfse, data_constituicao, valor_issqn, tipo_credito, simples_nacional, aliquota, valor_faturado, valor_deducao, base_calculo)
