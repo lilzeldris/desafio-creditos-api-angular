@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
-interface Credito {
+export interface Credito {
   numeroCredito: string;
   numeroNfse: string;
   dataConstituicao: string;
@@ -23,11 +24,29 @@ export class CreditoService {
 
   constructor(private http: HttpClient) {}
 
+  private handleError(error: HttpErrorResponse) {
+    let errorMessage = 'Ocorreu um erro na consulta.';
+    
+    if (error.error instanceof ErrorEvent) {
+      errorMessage = `Erro: ${error.error.message}`;
+    } else {
+      errorMessage = `Código do erro: ${error.status}\nMensagem: ${error.message}`;
+    }
+    
+    return throwError(() => new Error(errorMessage));
+  }
+
   consultarPorNumeroNfse(numeroNfse: string): Observable<Credito[]> {
-    return this.http.get<Credito[]>(`${this.apiUrl}/${numeroNfse}`);
+    return this.http.get<Credito[]>(`${this.apiUrl}/${numeroNfse}`)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
   consultarPorNumeroCredito(numeroCredito: string): Observable<Credito> {
-    return this.http.get<Credito>(`${this.apiUrl}/credito/${numeroCredito}`);
+    return this.http.get<Credito>(`${this.apiUrl}/credito/${numeroCredito}`)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 } 

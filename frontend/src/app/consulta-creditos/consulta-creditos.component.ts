@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CreditoService } from '../services/credito.service';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 interface Credito {
   numeroCredito: string;
@@ -17,89 +18,149 @@ interface Credito {
 @Component({
   selector: 'app-consulta-creditos',
   template: `
-    <div class="container">
-      <mat-card>
-        <mat-card-content>
-          <div class="search-form">
-            <mat-form-field>
-              <mat-label>Número da NFS-e ou Crédito</mat-label>
-              <input matInput [(ngModel)]="numeroConsulta" placeholder="Digite o número">
-            </mat-form-field>
-            <button mat-raised-button color="primary" (click)="consultar()">Consultar</button>
+    <div class="container mt-4">
+      <div class="row">
+        <div class="col-md-8 offset-md-2">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="text-center">Consulta de Créditos</h3>
+            </div>
+            <div class="card-body">
+              <form [formGroup]="consultaForm" (ngSubmit)="consultar()">
+                <div class="mb-3">
+                  <label class="form-label">Tipo de Consulta</label>
+                  <select class="form-select" formControlName="tipoConsulta">
+                    <option value="nfse">NFS-e</option>
+                    <option value="credito">Número do Crédito</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Número</label>
+                  <input type="text" class="form-control" formControlName="numero" 
+                         [placeholder]="consultaForm.get('tipoConsulta')?.value === 'nfse' ? 'Número da NFS-e' : 'Número do Crédito'">
+                  <div class="text-danger" *ngIf="consultaForm.get('numero')?.errors?.['required'] && consultaForm.get('numero')?.touched">
+                    Campo obrigatório
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100" [disabled]="consultaForm.invalid || loading">
+                  <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                  Consultar
+                </button>
+              </form>
+            </div>
           </div>
 
-          <table mat-table [dataSource]="creditos" *ngIf="creditos.length > 0">
-            <ng-container matColumnDef="numeroCredito">
-              <th mat-header-cell *matHeaderCellDef>Número do Crédito</th>
-              <td mat-cell *matCellDef="let credito">{{credito.numeroCredito}}</td>
-            </ng-container>
+          <div class="alert alert-danger mt-3" *ngIf="erro">
+            {{ erro }}
+          </div>
 
-            <ng-container matColumnDef="numeroNfse">
-              <th mat-header-cell *matHeaderCellDef>Número da NFS-e</th>
-              <td mat-cell *matCellDef="let credito">{{credito.numeroNfse}}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="dataConstituicao">
-              <th mat-header-cell *matHeaderCellDef>Data de Constituição</th>
-              <td mat-cell *matCellDef="let credito">{{credito.dataConstituicao | date:'dd/MM/yyyy'}}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="valorIssqn">
-              <th mat-header-cell *matHeaderCellDef>Valor ISSQN</th>
-              <td mat-cell *matCellDef="let credito">{{credito.valorIssqn | currency:'BRL'}}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="tipoCredito">
-              <th mat-header-cell *matHeaderCellDef>Tipo do Crédito</th>
-              <td mat-cell *matCellDef="let credito">{{credito.tipoCredito}}</td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          </table>
-        </mat-card-content>
-      </mat-card>
+          <div class="card mt-4" *ngIf="creditos.length > 0">
+            <div class="card-header">
+              <h4>Resultados</h4>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Nº Crédito</th>
+                      <th>Nº NFS-e</th>
+                      <th>Data</th>
+                      <th>Valor ISSQN</th>
+                      <th>Tipo</th>
+                      <th>Simples</th>
+                      <th>Alíquota</th>
+                      <th>Valor Faturado</th>
+                      <th>Valor Dedução</th>
+                      <th>Base Cálculo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let credito of creditos">
+                      <td>{{ credito.numeroCredito }}</td>
+                      <td>{{ credito.numeroNfse }}</td>
+                      <td>{{ credito.dataConstituicao | date:'dd/MM/yyyy' }}</td>
+                      <td>{{ credito.valorIssqn | currency:'BRL' }}</td>
+                      <td>{{ credito.tipoCredito }}</td>
+                      <td>{{ credito.simplesNacional ? 'Sim' : 'Não' }}</td>
+                      <td>{{ credito.aliquota }}%</td>
+                      <td>{{ credito.valorFaturado | currency:'BRL' }}</td>
+                      <td>{{ credito.valorDeducao | currency:'BRL' }}</td>
+                      <td>{{ credito.baseCalculo | currency:'BRL' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
-    .container {
-      padding: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
+    .table-responsive {
+      max-height: 500px;
+      overflow-y: auto;
     }
-    .search-form {
-      display: flex;
-      gap: 20px;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    mat-form-field {
-      flex: 1;
-    }
-    table {
-      width: 100%;
+    .table th {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 1;
     }
   `]
 })
 export class ConsultaCreditosComponent {
-  numeroConsulta = '';
+  consultaForm: FormGroup;
   creditos: Credito[] = [];
-  displayedColumns = ['numeroCredito', 'numeroNfse', 'dataConstituicao', 'valorIssqn', 'tipoCredito'];
+  loading = false;
+  erro: string | null = null;
 
-  constructor(private creditoService: CreditoService) {}
+  constructor(
+    private creditoService: CreditoService,
+    private fb: FormBuilder
+  ) {
+    this.consultaForm = this.fb.group({
+      tipoConsulta: ['nfse', Validators.required],
+      numero: ['', Validators.required]
+    });
+  }
 
   consultar() {
-    if (!this.numeroConsulta) return;
+    if (this.consultaForm.invalid) return;
 
-    if (this.numeroConsulta.length === 6) {
-      this.creditoService.consultarPorNumeroCredito(this.numeroConsulta)
-        .subscribe(credito => {
-          this.creditos = [credito];
+    this.loading = true;
+    this.erro = null;
+    this.creditos = [];
+
+    const tipo = this.consultaForm.get('tipoConsulta')?.value;
+    const numero = this.consultaForm.get('numero')?.value;
+
+    if (tipo === 'nfse') {
+      this.creditoService.consultarPorNumeroNfse(numero)
+        .subscribe({
+          next: (result) => {
+            this.creditos = result;
+            this.loading = false;
+          },
+          error: (error) => {
+            this.erro = 'Erro ao consultar créditos. Tente novamente.';
+            this.loading = false;
+            console.error('Erro:', error);
+          }
         });
     } else {
-      this.creditoService.consultarPorNumeroNfse(this.numeroConsulta)
-        .subscribe(creditos => {
-          this.creditos = creditos;
+      this.creditoService.consultarPorNumeroCredito(numero)
+        .subscribe({
+          next: (result) => {
+            this.creditos = [result];
+            this.loading = false;
+          },
+          error: (error) => {
+            this.erro = 'Erro ao consultar crédito. Tente novamente.';
+            this.loading = false;
+            console.error('Erro:', error);
+          }
         });
     }
   }
